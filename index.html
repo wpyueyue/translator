@@ -41,13 +41,21 @@
     <div class="flex flex-wrap gap-2 mb-4">
       <button onclick="startRecognition()" class="bg-pink-500 text-white px-4 py-2 rounded-xl">🎤 语音输入</button>
       <button onclick="translateText()" class="bg-blue-500 text-white px-4 py-2 rounded-xl">🌍 立即翻译</button>
-      <button onclick="speakOutput()" class="bg-green-500 text-white px-4 py-2 rounded-xl">🔊 播放输出</button>
     </div>
   </div>
 
   <script>
     const chatBox = document.getElementById("chatBox");
     const storageKey = "chatHistory";
+
+    function speak(text) {
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(text);
+      const selectedLang = document.getElementById("targetLang").value;
+      const supportedLangs = ["zh-CN", "en", "ja", "ko"];
+      utterance.lang = supportedLangs.includes(selectedLang) ? selectedLang : "en";
+      synth.speak(utterance);
+    }
 
     function appendChat(input, output) {
       const block = document.createElement("div");
@@ -56,9 +64,12 @@
           <p class="text-sm text-gray-500">你说：</p>
           <p class="font-medium">${input}</p>
         </div>
-        <div class="bg-blue-100 p-3 rounded-xl">
-          <p class="text-sm text-gray-500">翻译：</p>
-          <p class="font-medium">${output}</p>
+        <div class="bg-blue-100 p-3 rounded-xl flex justify-between items-center">
+          <div>
+            <p class="text-sm text-gray-500">翻译：</p>
+            <p class="font-medium">${output}</p>
+          </div>
+          <button onclick="speak('${output.replace(/'/g, "\\'")}')" class="ml-4 px-2 py-1 bg-green-500 text-white text-sm rounded-xl">🔊</button>
         </div>
       `;
       chatBox.appendChild(block);
@@ -79,16 +90,6 @@
 
       appendChat(input, translated);
       document.getElementById("inputText").value = "";
-    }
-
-    function speakOutput() {
-      const blocks = chatBox.querySelectorAll(".bg-blue-100 p.font-medium");
-      if (blocks.length === 0) return;
-      const lastOutput = blocks[blocks.length - 1].innerText;
-      const synth = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(lastOutput);
-      utterance.lang = document.getElementById("targetLang").value;
-      synth.speak(utterance);
     }
 
     function startRecognition() {
