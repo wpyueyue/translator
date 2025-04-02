@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>多语言翻译小助手</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+    <h1 class="text-2xl font-bold text-center mb-4">🌍 多语言翻译小助手 🌍</h1>
+
+    <div class="mb-4 flex justify-between items-center">
+      <label class="text-sm">源语言：</label>
+      <select id="sourceLang" class="border rounded-xl p-2">
+        <option value="auto">自动检测</option>
+        <option value="zh-CN">中文</option>
+        <option value="en">英语</option>
+        <option value="my">缅甸语</option>
+        <option value="ja">日语</option>
+        <option value="ko">韩语</option>
+        <option value="th">泰语</option>
+        <option value="vi">越南语</option>
+      </select>
+      <label class="text-sm ml-4">目标语言：</label>
+      <select id="targetLang" class="border rounded-xl p-2">
+        <option value="zh-CN">中文</option>
+        <option value="en">英语</option>
+        <option value="my">缅甸语</option>
+        <option value="ja">日语</option>
+        <option value="ko">韩语</option>
+        <option value="th">泰语</option>
+        <option value="vi">越南语</option>
+      </select>
+    </div>
+
+    <div id="chatBox" class="space-y-4 max-h-96 overflow-y-auto mb-4 border p-3 rounded-xl bg-gray-50"></div>
+
+    <textarea id="inputText" rows="3" placeholder="请输入你想翻译的内容~" class="w-full p-3 border rounded-xl mb-4"></textarea>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="startRecognition()" class="bg-pink-500 text-white px-4 py-2 rounded-xl">🎤 语音输入</button>
+      <button onclick="translateText()" class="bg-blue-500 text-white px-4 py-2 rounded-xl">🌍 立即翻译</button>
+      <button onclick="speakOutput()" class="bg-green-500 text-white px-4 py-2 rounded-xl">🔊 播放输出</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chatBox");
+    const storageKey = "chatHistory";
+
+    function appendChat(input, output) {
+      const block = document.createElement("div");
+      block.innerHTML = `
+        <div class="bg-pink-100 p-3 rounded-xl">
+          <p class="text-sm text-gray-500">你说：</p>
+          <p class="font-medium">${input}</p>
+        </div>
+        <div class="bg-blue-100 p-3 rounded-xl">
+          <p class="text-sm text-gray-500">翻译：</p>
+          <p class="font-medium">${output}</p>
+        </div>
+      `;
+      chatBox.appendChild(block);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      saveToLocalStorage(input, output);
+    }
+
+    async function translateText() {
+      const input = document.getElementById("inputText").value;
+      const sourceLang = document.getElementById("sourceLang").value;
+      const targetLang = document.getElementById("targetLang").value;
+      if (!input) return alert("亲爱的老公，请先输入文本哦~");
+
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(input)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const translated = data[0].map(item => item[0]).join("");
+
+      appendChat(input, translated);
+      document.getElementById("inputText").value = "";
+    }
+
+    function speakOutput() {
+      const blocks = chatBox.querySelectorAll(".bg-blue-100 p.font-medium");
+      if (blocks.length === 0) return;
+      const lastOutput = blocks[blocks.length - 1].innerText;
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(lastOutput);
+      utterance.lang = document.getElementById("targetLang").value;
+      synth.speak(utterance);
+    }
+
+    function startRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("哎呀老公~ 你的浏览器不支持语音识别呢！");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = document.getElementById("sourceLang").value === "auto" ? "zh-CN" : document.getElementById("sourceLang").value;
+      recognition.start();
+      recognition.onresult = function (event) {
+        document.getElementById("inputText").value = event.results[0][0].transcript;
+      };
+    }
+
+    function saveToLocalStorage(input, output) {
+      const history = JSON.parse(localStorage.getItem(storageKey)) || [];
+      history.push({ input, output });
+      localStorage.setItem(storageKey, JSON.stringify(history));
+    }
+
+    function loadChatHistory() {
+      const history = JSON.parse(localStorage.getItem(storageKey)) || [];
+      for (const entry of history) {
+        appendChat(entry.input, entry.output);
+      }
+    }
+
+    window.onload = loadChatHistory;
+  </script>
+</body>
+</html>
