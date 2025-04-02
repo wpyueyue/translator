@@ -9,12 +9,22 @@
   <meta http-equiv="Expires" content="0">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .speaking {
-      animation: pulse 1s infinite;
+    .speaking-icon {
+      width: 24px;
+      height: 24px;
+      display: inline-block;
+      mask: url('https://www.svgrepo.com/show/13692/speaker.svg') no-repeat center;
+      -webkit-mask: url('https://www.svgrepo.com/show/13692/speaker.svg') no-repeat center;
+      background-color: #22c55e;
+      mask-size: contain;
+      -webkit-mask-size: contain;
     }
-    @keyframes pulse {
+    .speaking-icon.speaking {
+      animation: pulseIcon 0.6s infinite ease-in-out;
+    }
+    @keyframes pulseIcon {
       0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
+      50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
   </style>
@@ -60,25 +70,26 @@
   <script>
     const chatBox = document.getElementById("chatBox");
 
-    function speak(text, button) {
+    function speak(text, iconId) {
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedLang = document.getElementById("targetLang").value;
       const supportedLangs = ["zh-CN", "en", "ja", "ko"];
       utterance.lang = supportedLangs.includes(selectedLang) ? selectedLang : "en";
 
-      if (button) button.classList.add("speaking");
+      const icon = document.getElementById(iconId);
+      if (icon) icon.classList.add("speaking");
 
       utterance.onend = () => {
-        if (button) button.classList.remove("speaking");
+        if (icon) icon.classList.remove("speaking");
       };
 
       synth.speak(utterance);
     }
 
     function appendChat(input, output) {
+      const iconId = `icon-${Date.now()}`;
       const block = document.createElement("div");
-      const buttonId = `speakBtn-${Date.now()}`;
       block.innerHTML = `
         <div class="bg-pink-100 p-3 rounded-xl">
           <p class="text-sm text-gray-500">你说：</p>
@@ -89,7 +100,9 @@
             <p class="text-sm text-gray-500">翻译：</p>
             <p class="font-medium">${output}</p>
           </div>
-          <button id="${buttonId}" onclick="speak('${output.replace(/'/g, "\\'")}', this)" class="ml-4 px-2 py-1 bg-green-500 text-white text-sm rounded-xl">🔊</button>
+          <div onclick="speak('${output.replace(/'/g, "\\'")}', '${iconId}')" class="cursor-pointer ml-4">
+            <div id="${iconId}" class="speaking-icon"></div>
+          </div>
         </div>
       `;
       chatBox.appendChild(block);
