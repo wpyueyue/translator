@@ -8,6 +8,16 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .speaking {
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
 </head>
 <body class="bg-gray-100 p-4" onload="sessionStorage.clear()">
   <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
@@ -50,17 +60,25 @@
   <script>
     const chatBox = document.getElementById("chatBox");
 
-    function speak(text) {
+    function speak(text, button) {
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedLang = document.getElementById("targetLang").value;
       const supportedLangs = ["zh-CN", "en", "ja", "ko"];
       utterance.lang = supportedLangs.includes(selectedLang) ? selectedLang : "en";
+
+      if (button) button.classList.add("speaking");
+
+      utterance.onend = () => {
+        if (button) button.classList.remove("speaking");
+      };
+
       synth.speak(utterance);
     }
 
     function appendChat(input, output) {
       const block = document.createElement("div");
+      const buttonId = `speakBtn-${Date.now()}`;
       block.innerHTML = `
         <div class="bg-pink-100 p-3 rounded-xl">
           <p class="text-sm text-gray-500">你说：</p>
@@ -71,7 +89,7 @@
             <p class="text-sm text-gray-500">翻译：</p>
             <p class="font-medium">${output}</p>
           </div>
-          <button onclick="speak('${output.replace(/'/g, "\\'")}')" class="ml-4 px-2 py-1 bg-green-500 text-white text-sm rounded-xl">🔊</button>
+          <button id="${buttonId}" onclick="speak('${output.replace(/'/g, "\\'")}', this)" class="ml-4 px-2 py-1 bg-green-500 text-white text-sm rounded-xl">🔊</button>
         </div>
       `;
       chatBox.appendChild(block);
@@ -108,9 +126,8 @@
     }
 
     window.onload = () => {
-      // 不加载缓存聊天记录
       localStorage.removeItem("chatHistory");
-    }
+    };
   </script>
 </body>
 </html>
